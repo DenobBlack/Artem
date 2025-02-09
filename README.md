@@ -1,5 +1,3 @@
-
-------------------------------------Дизайн---------------------------------
 <Window x:Class="LabWork16.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -50,7 +48,16 @@
         </TabControl>
     </DockPanel>
 </Window>
--------------------------------------------------Код-------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
  private const int GWL_STYLE = -16;
  private const int WS_SYSMENU = 0x80000;
 
