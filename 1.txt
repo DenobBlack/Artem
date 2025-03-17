@@ -1,0 +1,118 @@
+package com.example.example
+
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.sp
+import com.example.example.ui.theme.ExampleTheme
+
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+        setContent {
+            ExampleTheme {
+                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                    Authorization(Modifier.padding(innerPadding))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun Authorization(modifier: Modifier) {
+    val phone = remember { mutableStateOf("") }
+    val code = remember { mutableStateOf("") }
+    Column(modifier = modifier) {
+        TextField(value = phone.value,
+            onValueChange = { newText -> phone.value = newText },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+            label = { Text("Номер телефона") })
+        TextField(value = code.value,
+            onValueChange = { newText -> code.value = newText },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            label = { Text("Числовой код") })
+        Button(onClick = {}) { Text("Авторизоваться") }
+    }
+}
+
+@Composable
+fun Search(modifier: Modifier) {
+    val phone = remember { mutableStateOf("") }
+    val code = remember { mutableStateOf("") }
+    val searchText = remember { mutableStateOf("") }
+    TextField(value = searchText.value,
+        onValueChange = { newText -> searchText.value = newText },
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+        label = { Text("Поиск") },
+        modifier = Modifier.fillMaxWidth(),
+        leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Поиск") },
+        placeholder = { Text("Введите значение для поиска") }
+    )
+    Column(modifier = modifier) {
+        TextField(value = phone.value,
+            onValueChange = { newText -> phone.value = newText },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+            label = { Text("Номер телефона") })
+        TextField(value = code.value,
+            onValueChange = { newText -> code.value = newText },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            label = { Text("Числовой код") })
+        Button(onClick = {}) { Text("Авторизоваться") }
+    }
+}
+
+@Composable
+fun AuthorizationWithSearch(modifier: Modifier) {
+    val login = remember { mutableStateOf("") }
+    val password = remember { mutableStateOf("") }
+    val openDialog = remember { mutableStateOf(false) }
+    Column(modifier = modifier) {
+        TextField(value = login.value,
+            onValueChange = { newText -> login.value = newText },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+            label = { Text("Логин") })
+        TextField(value = password.value,
+            onValueChange = { newText -> password.value = newText },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            visualTransformation = PasswordVisualTransformation(),
+            label = { Text("Пароль") })
+        Button(onClick = { openDialog.value = true }
+        ) { Text("Авторизоваться") }
+        if (openDialog.value) {
+            AlertDialog(
+                onDismissRequest = { openDialog.value = false },
+                title = { Text(text = "Здравствуйте") },
+                text = { Text("Добро пожаловать, ${login.value}") },
+                confirmButton = {
+                    Button({ openDialog.value = false }) {
+                        Text("OK", fontSize = 22.sp)
+                    }
+                }
+            )
+        }
+    }
+}
