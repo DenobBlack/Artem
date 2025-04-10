@@ -1,0 +1,4 @@
+Выполнять в MySQL Workbench
+
+Server - Data Export
+настроить по картике
