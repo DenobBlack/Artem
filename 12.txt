@@ -1,0 +1,89 @@
+-- 5.1 Представление, выводящее заказы текущего года
+CREATE VIEW OrdersThisYear AS
+SELECT
+    O.idOrder,
+    O.OrderDate,
+    O.idCustomer,
+    O.Login,
+    C.Surname,
+    C.Name
+FROM
+    Order O
+JOIN
+    Customer C ON O.idCustomer = C.idCustomer
+WHERE
+    YEAR(O.OrderDate) = YEAR(GETDATE());
+
+-- Тестирование:
+SELECT * FROM OrdersThisYear;
+
+-- 5.2 Представление, выводящее информацию о книге
+CREATE VIEW BookInfo AS
+SELECT
+    B.idBook,
+    A.Surname,
+    A.Name,
+    B.Title,
+    B.Price
+FROM
+    Book B
+JOIN
+    Author A ON B.idAuthor = A.idAuthor;
+
+-- Тестирование:
+SELECT * FROM BookInfo;
+
+-- 5.3 Представление, возвращающее фамилию и имя автора и список написанных им книг (разделенных точкой с запятой)
+CREATE VIEW AuthorBooks AS
+SELECT
+    A.Surname,
+    A.Name,
+    STUFF((
+        SELECT DISTINCT '; ' + B.Title
+        FROM Book B
+        WHERE B.idAuthor = A.idAuthor
+        ORDER BY B.Title
+        FOR XML PATH(''), TYPE
+    ).value('.', 'NVARCHAR(MAX)'), 1, 2, '') AS BookList
+FROM
+    Author A;
+
+-- Тестирование:
+SELECT * FROM AuthorBooks;
+
+-- 5.4 Представление, использующее BookInfo и добавляющее CASE для 'Сказки'
+CREATE VIEW BookInfoWithSkazki AS
+SELECT
+    idBook,
+    Surname,
+    Name,
+    Title,
+    CASE
+        WHEN Title LIKE '%Сказки%' THEN 'Yes'
+        ELSE 'No'
+    END AS ContainsSkazki,
+    Price
+FROM
+    BookInfo;
+
+-- Тестирование:
+SELECT * FROM BookInfoWithSkazki;
+
+-- 5.5 Представление, использующее BookInfo и добавляющее CASE для ценовой категории
+CREATE VIEW BookInfoWithPriceCategory AS
+SELECT
+    idBook,
+    Surname,
+    Name,
+    Title,
+    CASE
+        WHEN Price < 1000 THEN 'Under 1000'
+        WHEN Price >= 1000 AND Price < 5000 THEN '1000 to 5000'
+        ELSE 'Over 5000'
+    END AS PriceCategory,
+    Price
+FROM
+    BookInfo;
+
+-- Тестирование:
+SELECT * FROM BookInfoWithPriceCategory;
