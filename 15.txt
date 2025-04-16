@@ -1,0 +1,98 @@
+-- #1
+CREATE TABLE DeletedCustomer (
+    idCustomer INT,
+    Login VARCHAR(20),
+    Surname VARCHAR(50),
+    Name VARCHAR(50),
+    Address VARCHAR(100),
+    Phone VARCHAR(20),
+    DateDeleted TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TRIGGER AfterCustomerDelete
+AFTER DELETE ON Customer
+FOR EACH ROW
+BEGIN
+    INSERT INTO DeletedCustomer (idCustomer, Login, Surname, Name, Address, Phone)
+    VALUES (OLD.idCustomer, OLD.Login, OLD.Surname, OLD.Name, OLD.Address, OLD.Phone);
+END;
+
+-- #2
+CREATE TABLE Logs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    TableName VARCHAR(255),
+    Operation VARCHAR(10),
+    DateTimestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CurrentUser VARCHAR(255) DEFAULT CURRENT_USER()
+);
+
+CREATE TRIGGER AfterBookInsert
+AFTER INSERT ON Book
+FOR EACH ROW
+BEGIN
+    INSERT INTO Logs (TableName, Operation)
+    VALUES ('Book', 'INSERT');
+END;
+
+CREATE TRIGGER AfterBookUpdate
+AFTER UPDATE ON Book
+FOR EACH ROW
+BEGIN
+    INSERT INTO Logs (TableName, Operation)
+    VALUES ('Book', 'UPDATE');
+END;
+
+CREATE TRIGGER AfterBookDelete
+AFTER DELETE ON Book
+FOR EACH ROW
+BEGIN
+    INSERT INTO Logs (TableName, Operation)
+    VALUES ('Book', 'DELETE');
+END;
+
+CREATE TRIGGER AfterOrderInsert
+AFTER INSERT ON `Order`
+FOR EACH ROW
+BEGIN
+    INSERT INTO Logs (TableName, Operation)
+    VALUES ('`Order`', 'INSERT');
+END;
+
+CREATE TRIGGER AfterOrderUpdate
+AFTER UPDATE ON `Order`
+FOR EACH ROW
+BEGIN
+    INSERT INTO Logs (TableName, Operation)
+    VALUES ('`Order`', 'UPDATE');
+END;
+
+CREATE TRIGGER AfterOrderDelete
+AFTER DELETE ON `Order`
+FOR EACH ROW
+BEGIN
+    INSERT INTO Logs (TableName, Operation)
+    VALUES ('`Order`', 'DELETE');
+END;
+
+-- #3
+ALTER TRIGGER AfterOrderDelete
+AFTER DELETE ON `Order`
+FOR EACH ROW
+BEGIN
+    DELETE FROM Customer
+    WHERE idCustomer = OLD.idCustomer
+    AND NOT EXISTS (SELECT 1 FROM `Order` WHERE idCustomer = OLD.idCustomer);
+    INSERT INTO Logs (TableName, Operation)
+    VALUES ('Customer', 'DELETE - Orphaned Customer');
+END;
+
+-- #4
+ALTER TRIGGER AfterSostavInsert
+AFTER INSERT ON order_has_book
+FOR EACH ROW
+BEGIN
+    SET @orderCost = (SELECT SUM(B.Price * S.Количество)
+                     FROM order_has_book S
+                     JOIN Book B ON S.idBook = B.idBook
+                     WHERE S.idOrder = NEW.idOrder);
+END;
