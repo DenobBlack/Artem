@@ -7,7 +7,9 @@ val launcher = rememberLauncherForActivityResult(
         uri?.let {
             scope.launch(Dispatchers.IO) {
                 fileContent = context.contentResolver.openInputStream(uri)
-                    ?.bufferedReader()?.readText()
+                    ?.bufferedReader()?.use {reader ->
+                        reader.readText()
+                    }
             }
         }
     }
@@ -21,4 +23,24 @@ Button(onClick = {
 
 fileContent?.let {
     Text(it)
+}
+
+val saveLauncher = rememberLauncherForActivityResult(
+    contract = ActivityResultContracts.CreateDocument("text/plain"),
+    onResult = { uri: Uri? ->
+        uri?.let {
+            scope.launch(Dispatchers.IO) {
+                context.contentResolver.openOutputStream(uri)
+                    ?.bufferedWriter()?.use { writer ->
+                        writer.write(fileContent)
+                    }
+            }
+        }
+    }
+)
+
+Button(onClick = {
+    saveLauncher.launch("file.txt")
+}) {
+    Text("Сохранить")
 }
