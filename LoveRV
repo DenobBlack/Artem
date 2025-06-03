@@ -1,0 +1,24 @@
+val scope = rememberCoroutineScope()
+var fileContent by remember { mutableStateOf<String?>(null) }
+
+val launcher = rememberLauncherForActivityResult(
+    contract = ActivityResultContracts.OpenDocument(),
+    onResult = {uri: Uri? ->
+        uri?.let {
+            scope.launch(Dispatchers.IO) {
+                fileContent = context.contentResolver.openInputStream(uri)
+                    ?.bufferedReader()?.readText()
+            }
+        }
+    }
+)
+
+Button(onClick = {
+    launcher.launch(arrayOf("text/plain"))
+}) {
+    Text("Выбрать")
+}
+
+fileContent?.let {
+    Text(it)
+}
