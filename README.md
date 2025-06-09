@@ -1,73 +1,69 @@
+using System;
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
 
-    <DockPanel>
-        <Menu DockPanel.Dock="Top">
-            <Menu.ItemsPanel>
-                <ItemsPanelTemplate>
-                    <DockPanel HorizontalAlignment="Right"/>
-                </ItemsPanelTemplate>
-            </Menu.ItemsPanel>
-            <MenuItem Header="Запустить новую задачу"/>
-            <Separator/>
-            <MenuItem Name="Leave" Header="Выход" Click="LeaveItem_Click" Height="25"/>
-        </Menu>
-        <ToolBar DockPanel.Dock="Top">
-            <ToolBar.Resources>
-                <Style TargetType="{x:Type ToolBarPanel}">
-                    <Setter Property="Orientation" Value="Vertical"/>
-                </Style>
-            </ToolBar.Resources>
-
-            <DockPanel>
-                <Button x:Name="RefreshButton" Content="Обновить" DockPanel.Dock="Right" HorizontalAlignment="Right" />
-                <Separator/>
-                <Button x:Name="KillTaskButton" Content="Снять задачу" Click="KillTaskButton_Click" DockPanel.Dock="Right" HorizontalAlignment="Right"/>
-                <Separator/>
-                <Button x:Name="KillTasksButton" Content="Завершить дерево процессов" DockPanel.Dock="Right" HorizontalAlignment="Right"/>
-            </DockPanel>
-        </ToolBar>
-        <TabControl TabStripPlacement="Left">
-            <TabItem Header="Процессы" Height="40">
-                <ListBox>
-                    <ListBox.ContextMenu>
-                        <ContextMenu>
-                            <MenuItem Header="Снять задачу"/>
-                            <MenuItem Header="Завершить дерево процессов"/>
-                        </ContextMenu>
-                    </ListBox.ContextMenu>
-                </ListBox>
-            </TabItem>
-            <TabItem Header="Приложения" Height="40"/>
-        </TabControl>
-    </DockPanel>
-</Window>
-
-
-private const int GWL_STYLE = -16;
-private const int WS_SYSMENU = 0x80000;
-
-[System.Runtime.InteropServices.DllImport("user32.dll", SetLastError = true)}
-private static extern int GetWindowLong(System.IntPtr hWnd, int nIndex);
-
-[System.Runtime.InteropServices.DllImport("user32.dll")}
-private static extern int SetWindowLong(System.IntPtr hWnd, int nIndex, int dwNewLong);
-public MainWindow()
+namespace RpsServer
 {
-    InitializeComponent();
-    Loaded += Window_Loaded;
+    class Program
+    {
+        static void Main()
+        {
+            const int port = 5000;
+            var listener = new TcpListener(IPAddress.Any, port);
+            listener.Start();
+            Console.WriteLine($"Сервер запущен на порту {port}. Ожидаем 2 клиентов...");
+
+            // 1) Ждём двух подключений
+            var client1 = listener.AcceptTcpClient();
+            Console.WriteLine("Клиент 1 подключился.");
+            var client2 = listener.AcceptTcpClient();
+            Console.WriteLine("Клиент 2 подключился.");
+
+            using var stream1 = client1.GetStream();
+            using var stream2 = client2.GetStream();
+
+            byte[] buf1 = new byte[256];
+            byte[] buf2 = new byte[256];
+
+            while (true)
+            {
+                // 2) Получаем ходы от обоих
+                int len1 = stream1.Read(buf1, 0, buf1.Length);
+                string move1 = Encoding.UTF8.GetString(buf1, 0, len1).Trim();
+                Console.WriteLine($"Клиент1 сыграл: {move1}");
+
+                int len2 = stream2.Read(buf2, 0, buf2.Length);
+                string move2 = Encoding.UTF8.GetString(buf2, 0, len2).Trim();
+                Console.WriteLine($"Клиент2 сыграл: {move2}");
+
+                // 3) Вычисляем результат
+                string result1 = GetResult(move1, move2);
+                string result2 = GetResult(move2, move1);
+
+                // 4) Отправляем каждому ответ: «Противник сыграл X, вы Y»
+                Send(stream1, $"Противник сыграл {move2}, вы {result1}");
+                Send(stream2, $"Противник сыграл {move1}, вы {result2}");
+
+                Console.WriteLine("Результаты отправлены. Ждём следующий раунд...");
+            }
+        }
+
+        static void Send(NetworkStream stream, string msg)
+        {
+            var data = Encoding.UTF8.GetBytes(msg);
+            stream.Write(data, 0, data.Length);
+        }
+
+        static string GetResult(string me, string opp)
+        {
+            if (me == opp) return "ничья";
+            if ((me == "камень" && opp == "ножницы") ||
+                (me == "ножницы" && opp == "бумага") ||
+                (me == "бумага" && opp == "камень"))
+                return "победили";
+            else
+                return "проиграли";
+        }
+    }
 }
-
- private void KillTaskButton_Click(object sender, RoutedEventArgs e)
- {
-
- }
-
- private void Window_Loaded(object sender, RoutedEventArgs e)
- {
-     var hwnd = new System.Windows.Interop.WindowInteropHelper(this).Handle;
-     SetWindowLong(hwnd, GWL_STYLE, GetWindowLong(hwnd, GWL_STYLE) & ~WS_SYSMENU);
- }
-
- private void LeaveItem_Click(object sender, RoutedEventArgs e)
- {
-     Close();
- }
