@@ -1,238 +1,96 @@
-Максим:
-// Program.cs
-// Универсальный тестовый инструмент (C#)
-// Поддерживает: power (a^n), passwd (проверка пароля), gen_tests (генерация граничных тестов)
-using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
-using System.Numerics;
-using System.Text;
-class Program
-{
-    static void Main()
-    {
-        Console.OutputEncoding = Encoding.UTF8;
-        ShowIntro();
-        while (true)
-        {
-            Console.Write("Команда (power/passwd/gen_tests/0): ");
-            var cmd = (Console.ReadLine() ?? "").Trim().ToLowerInvariant();
-            if (cmd == "0"  cmd == "exit"  cmd == "quit") { Console.WriteLine("Выход."); break; }
+Здравствуйте. Меня зовут <ФИО>, я представляю курсовой проект «Фитнес-тренер».
 
-            if (cmd == "power")
-            {
-                Console.Write("Введите a (число): ");
-                var aStr = Console.ReadLine() ?? "";
-                Console.Write("Введите n (целое): ");
-                var nStr = Console.ReadLine() ?? "";
-                Console.WriteLine(PowerCommand(aStr, nStr));
-            }
-            else if (cmd == "passwd")
-            {
-                Console.Write("Введите пароль для проверки: ");
-                string pwd = Console.ReadLine() ?? "";
-                var r = CheckPassword(pwd);
-                Console.WriteLine($"Результат: {(r.Ok ? "OK" : "FAIL")}");
-                if (r.Errors.Count > 0) Console.WriteLine("Ошибки: " + string.Join("; ", r.Errors));
-                Console.WriteLine($"Оценка силы: {r.Strength} (баллов: {r.Score})");
-            }
-            else if (cmd == "gen_tests" || cmd == "gen_tests_for_range")
-            {
-                Console.Write("min value: ");
-                var mn = Console.ReadLine() ?? "";
-                Console.Write("max value: ");
-                var mx = Console.ReadLine() ?? "";
-                var vals = GenTestsForRange(mn, mx);
-                Console.WriteLine("Сгенерированные тест-значения:");
-                if (vals is string)
-                {
-                    Console.WriteLine(vals);
-                }
-                else if (vals is List<string> list)
-                {
-                    foreach (var v in list) Console.WriteLine("  " + v);
-                }
-            }
-            else
-            {
-                Console.WriteLine("Неизвестная команда. Повторите.");
-            }
-        }
-    }
+Актуальность: в условиях роста интереса к здоровому образу жизни пользователю нужен простой и надёжный цифровой инструмент — чтобы планировать тренировки, выполнять упражнения корректно и фиксировать прогресс в удобном мобильном интерфейсе. Существующие решения часто либо перегружены, либо дорогие, либо не позволяют гибко отслеживать прогресс — поэтому я разработал приложение, ориентированное на простоту, прозрачность данных и локальную автономность.
 
-    static void ShowIntro()
-    {
-        Console.WriteLine("Универсальный тестовый инструмент");
-        Console.WriteLine("Меню:");
-        Console.WriteLine(" 1) power    - вычислить a^n (a - число, n - целое)");
-        Console.WriteLine(" 2) passwd   - проверить пароль по простым правилам");
-        Console.WriteLine(" 3) gen_tests- сгенерировать минимальный набор граничных тестов для одного числового параметра");
-        Console.WriteLine(" 0) exit");
-        Console.WriteLine();
-    }
+Целевая аудитория: приложение предназначено для людей, занимающихся самостоятельными тренировками — от новичков до любителей — а также для тех, кто хочет вести историю своих весовых прогрессов и калорий.
 
-    // ----- power -----
-    static string PowerCommand(string aStr, string nStr)
-    {
-        if (!double.TryParse(aStr.Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture, out double a))
-            return "Ошибка: a должно быть числом.";
+Кратко о решаемых задачах: в ходе проекта были проанализированы требования, спроектирована база данных для хранения данных, реализован клиент на Android с современным UI и серверная часть
 
-        if (!long.TryParse(nStr, NumberStyles.Any, CultureInfo.InvariantCulture, out long n))
-            return "Ошибка: n должно быть целым числом.";
+Средства разработки: те что на слайде,  средства разработки: Android Studio, Visual Studio, а также инструмент: Postman.
 
-        if (a == 0.0 && n < 0)
-            return "Ошибка: 0 в отрицательной степени не определено.";
+Ключевые достоинства проекта:
 
-        // Попробуем аккуратно вычислить целую степень для целых оснований с помощью BigInteger, если возможно
-        if (IsIntegerString(aStr) && Math.Abs(a) <= 1e18 && Math.Abs(n) <= 10000)
-        {
-            try
-            {
-                BigInteger baseInt = BigInteger.Parse(aStr, CultureInfo.InvariantCulture);
-                if (n >= 0)
-                {
-                    BigInteger bigRes = BigInteger.Pow(baseInt, (int)n);
-                    return $"{baseInt} ** {n} = {bigRes}";
+1. Интуитивный интерфейс — минималистичный, аккуратная типографика и единообразие экранов.
 
-}
-                else
-                {
-                    // отрицательная степень: результат дробный
-                    double val = Math.Pow((double)baseInt, (double)n);
-                    return $"{baseInt} ** {n} = {val} (double)";
-                }
-            }
-            catch
-            {
-                // fallthrough to double pow
-            }
-        }
 
-        double res = Math.Pow(a, (double)n);
-        // Если результат фактически целый — показать как целое
-        if (Math.Abs(res - Math.Round(res)) < 1e-12 && Math.Abs(res) <= (double)long.MaxValue)
-            return $"{a} ** {n} = {(long)Math.Round(res)}";
-        else
-            return $"{a} ** {n} = {res}";
-    }
+2. Точная история прогресса — при завершении упражнения старый вес сохраняется в истории, новый — применяется как текущее значение, что даёт прозрачный трекинг прогресса.
 
-    static bool IsIntegerString(string s)
-    {
-        s = s?.Trim();
-        if (string.IsNullOrEmpty(s)) return false;
-        if (s.StartsWith("+") || s.StartsWith("-")) s = s.Substring(1);
-        return s.All(char.IsDigit);
-    }
 
-    // ----- password check -----
-    class PwdResult
-    {
-        public bool Ok { get; set; } = true;
-        public List<string> Errors { get; set; } = new List<string>();
-        public int Score { get; set; } = 0;
-        public string Strength { get; set; } = "очень слабый";
-    }
+3. Гибкость тренировок — пользователь может создавать и редактировать тренировки, менять подходы/повторы/вес.
 
-    static PwdResult CheckPassword(string pwd,
-                                   int minLen = 8, int maxLen = 30,
-                                   bool requireDigit = true,
-                                   bool requireLetter = true,
-                                   bool allowCyrillic = false)
-    {
-        var r = new PwdResult();
-        int L = pwd.Length;
-        if (L < minLen) { r.Ok = false; r.Errors.Add($"Длина {L} < {minLen}"); }
-        if (L > maxLen) { r.Ok = false; r.Errors.Add($"Длина {L} > {maxLen}"); }
-        if (requireDigit && !pwd.Any(char.IsDigit)) { r.Ok = false; r.Errors.Add("Не содержит цифры"); }
-        if (requireLetter && !pwd.Any(char.IsLetter)) { r.Ok = false; r.Errors.Add("Не содержит букв"); }
-        if (!allowCyrillic && ContainsCyrillic(pwd)) { r.Ok = false; r.Errors.Add("Содержит кириллические символы (запрещены)"); }
 
-        int score = 0;
-        if (L >= 12) score++;
-        if (pwd.Any(char.IsLower) && pwd.Any(char.IsUpper)) score++;
-        if (pwd.Any(char.IsDigit)) score++;
-        if (pwd.Any(ch => char.IsPunctuation(ch) || char.IsSymbol(ch))) score++;
-        r.Score = score;
-        r.Strength = score switch
-        {
-            0 => "очень слабый",
-            1 => "слабый",
-            2 => "средний",
-            3 => "сильный",
-            _ => "очень сильный"
-        };
-        return r;
-    }
+4. Локальная стабильность и производительность: оптимизированные запросы, кэширование простых данных и устойчивость к ошибкам сети.
 
-    static bool ContainsCyrillic(string s)
-    {
-        foreach (char ch in s)
-        {
-            // кириллический диапазон
-            if (ch >= '\u0400' && ch <= '\u04FF') return true;
-            if (ch >= '\u0500' && ch <= '\u052F') return true;
-            if (ch >= '\u2DE0' && ch <= '\u2DFF') return true;
-            if (ch >= '\uA640' && ch <= '\uA69F') return true;
-        }
-        return false;
-    }
 
-    // ----- gen_tests -----
-    static object GenTestsForRange(string minStr, string maxStr)
-    {
-        if (string.IsNullOrWhiteSpace(minStr) || string.IsNullOrWhiteSpace(maxStr))
-            return "Ошибка: min или max пусты.";
+5. Простая масштабируемая архитектура API — ясная модель данных и привязка бизнес-логики на сервере.
 
-        // Попытаемся распознать как целые (без точки/е), иначе как double
-        bool minLooksFloat = minStr.Contains('.') || minStr.IndexOf('e', StringComparison.OrdinalIgnoreCase) >= 0;
-        bool maxLooksFloat = maxStr.Contains('.') || maxStr.IndexOf('e', StringComparison.OrdinalIgnoreCase) >= 0;
-        if (!minLooksFloat && !maxLooksFloat)
-        {
-            // integer path
-            if (!long.TryParse(minStr, NumberStyles.Any, CultureInfo.InvariantCulture, out long a) ||
-                !long.TryParse(maxStr, NumberStyles.Any, CultureInfo.InvariantCulture, out long b))
-                return "Ошибка: не удалось распарсить целые значения.";
 
-long mid = a + (b - a) / 2;
-            var vals = new List<string>
-            {
-                (a - 1).ToString(),
-                a.ToString(),
-                (a + 1).ToString(),
-                mid.ToString(),
-                (b - 1).ToString(),
-                b.ToString(),
-                (b + 1).ToString()
-            };
-            return vals;
-        }
-        else
-        {
-            // float path
-            if (!double.TryParse(minStr.Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture, out double a) ||
-                !double.TryParse(maxStr.Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture, out double b))
-                return "Ошибка: не удалось распарсить вещественные значения.";
 
-            double mid = (a + b) / 2.0;
-            double eps = Math.Max(1e-6, Math.Abs(b - a) * 1e-6);
-            var vals = new List<string>
-            {
-                FormatDouble(a - eps),
-                FormatDouble(a),
-                FormatDouble(a + eps),
-                FormatDouble(mid),
-                FormatDouble(b - eps),
-                FormatDouble(b),
-                FormatDouble(b + eps)
-            };
-            return vals;
-        }
-    }
+Заключение: цель проекта достигнута — разработано мобильное приложение с серверной частью, реализованы основные сценарии: просмотр упражнений, создание и выполнение тренировки, учёт калорий и воды, а также хранение истории прогресса.
 
-    static string FormatDouble(double v)
-    {
-        // Убрать лишние нули, использовать InvariantCulture
-        return v.ToString("G17", CultureInfo.InvariantCulture);
-    }
-}
+0:00–0:10 — Вступление (10 с)
+
+«Покажу кратко интерфейс и ключевые сценарии: авторизация, упражнения, создание и выполнение тренировки, запись прогресса.»
+
+
+0:10–0:40 — Авторизация / Гость (30 с)
+
+Показать экран логина.
+
+Объяснить, что приложение автоматически определяет роль; показать вариант «Гость» (navHost маршрут "guest").
+
+Речь: «Здесь можно войти как гость или под учетной записью — гостевой режим даёт доступ к просмотру упражнений.»
+
+
+0:40–1:10 — Главный экран: калории, вода, история (30 с)
+
+Переключиться на главный экран.
+
+Показать информеры: сегодняшние ккал, выпитая вода, календарь/история.
+
+Речь: «Главная страница даёт быстрый срез прогресса и доступ к основным разделам.»
+
+
+1:10–1:50 — Каталог упражнений и карточка упражнения (40 с)
+
+Открыть «Упражнения», пролистать сетку, открыть карточку.
+
+Показать детальный экран упражнения (техника, GIF, группа мышц, сложность).
+
+Речь: «Каждое упражнение содержит превью, инструкцию и метаданные. Для админа/тренера доступны редактирование/удаление — в демо скрыто в гостевом режиме.»
+
+
+1:50–2:40 — Создание/редактирование тренировки (50 с)
+
+Перейти в выбор/создание тренировки.
+
+Быстро создать тренировку: выбрать пару упражнений, задать sets/reps/вес, сохранить.
+
+Речь: «Создание — выбор упражнений из каталога и настройка параметров подходов, времени и повторов.»
+
+
+2:40–3:50 — Выполнение тренировки (70 с)
+
+Запустить тренировку → показать карточки упражнений, начать подходы.
+
+Выполнить все подходы (симулируя Done кнопки); при последнем подходе показать диалог ввода веса (EnterWeightDialog).
+
+Пояснить: «При завершении упражнения приложение спрашивает фактический вес — старое значение сохраняется в истории, новое записывается в текущую тренировку.»
+
+После ввода веса показать, что UI обновился и новый вес стал текущим.
+
+
+3:50–4:10 — История завершений и обновлённый профиль (20 с)
+
+Открыть раздел истории/комплитов, показать недавно созданную запись со старыми весами (пример JSON/список).
+
+Речь: «Здесь видна история прогресса по упражнениям — можно отследить рост веса по датам.»
+
+
+4:10–4:30 — Настройки, устойчивость и завершение (20 с)
+
+Быстро показать настройки (таймер отдыха, автоселект тренировки).
+
+Заключение: «Приложение готово к демонстрации основных сценариев и к доработке под дополнительные фичи. Готов отвечать на вопросы.»
+
+ Благодарю за внимание — готов ответить на вопросы.
